@@ -5,22 +5,17 @@ import BookItem from "./components/BookItem";
 import { Container, Button, Typography } from "@mui/material";
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [query, setQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [books, setBooks] = useState([]);
-  const [favorites, setFavorites] = useState(
-    JSON.parse(localStorage.getItem("favorites")) || []
-  );
-
-  useEffect(() => {
-    localStorage.setItem("favorites", JSON.stringify(favorites));
-  }, [favorites]);
-
   const handleLogin = () => {
     setIsLoggedIn(true);
   };
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [favorites, setFavorites] = useState(
+    JSON.parse(localStorage.getItem("favorites")) || []
+  );
+  const [books, setBooks] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [currentQuery, setCurrentQuery] = useState("");
 
   useEffect(() => {
     const savedPage = localStorage.getItem("bookListCurrentPage");
@@ -29,20 +24,7 @@ function App() {
     }
   }, []);
 
-  useEffect(() => {
-    const savedPage = localStorage.getItem("bookListCurrentPage");
-    if (savedPage) {
-      setCurrentPage(Number(savedPage));
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("bookListCurrentPage", currentPage);
-
-    fetchBooks();
-  }, [currentPage, query]);
-
-  const fetchBooks = async (query) => {
+  const fetchBooks = async (query = currentQuery) => {
     const startIndex = (currentPage - 1) * 10;
     try {
       const response = await fetch(
@@ -51,11 +33,15 @@ function App() {
       const data = await response.json();
       setBooks(data.items);
       setTotalPages(Math.ceil(data.totalItems / 10));
+      setCurrentQuery(query);
     } catch (error) {
       console.error("Error fetching books:", error);
     }
   };
-  //////////////////
+
+  useEffect(() => {
+    fetchBooks();
+  }, [currentPage]);
 
   const handleFavoriteToggle = (book) => {
     const isBookFavorite = favorites.some((fav) => fav.id === book.id);
