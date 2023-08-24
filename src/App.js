@@ -6,8 +6,9 @@ import { Container, Button, Typography } from "@mui/material";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [query, setQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
   const [books, setBooks] = useState([]);
   const [favorites, setFavorites] = useState(
     JSON.parse(localStorage.getItem("favorites")) || []
@@ -22,18 +23,39 @@ function App() {
   };
 
   useEffect(() => {
-    fetchBooks(searchQuery);
-  }, [currentPage]);
+    const savedPage = localStorage.getItem("bookListCurrentPage");
+    if (savedPage) {
+      setCurrentPage(Number(savedPage));
+    }
+  }, []);
+
+  useEffect(() => {
+    const savedPage = localStorage.getItem("bookListCurrentPage");
+    if (savedPage) {
+      setCurrentPage(Number(savedPage));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("bookListCurrentPage", currentPage);
+
+    fetchBooks();
+  }, [currentPage, query]);
 
   const fetchBooks = async (query) => {
-    setSearchQuery(query);
     const startIndex = (currentPage - 1) * 10;
-    const response = await fetch(
-      `https://www.googleapis.com/books/v1/volumes?q=${query}&startIndex=${startIndex}`
-    );
-    const data = await response.json();
-    setBooks(data.items);
+    try {
+      const response = await fetch(
+        `https://www.googleapis.com/books/v1/volumes?q=${query}&startIndex=${startIndex}`
+      );
+      const data = await response.json();
+      setBooks(data.items);
+      setTotalPages(Math.ceil(data.totalItems / 10));
+    } catch (error) {
+      console.error("Error fetching books:", error);
+    }
   };
+  //////////////////
 
   const handleFavoriteToggle = (book) => {
     const isBookFavorite = favorites.some((fav) => fav.id === book.id);
